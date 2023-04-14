@@ -1,6 +1,6 @@
 ![banner (1)](https://user-images.githubusercontent.com/72699445/232047516-68669452-efd0-4500-9c52-c4a377ff4a11.png)
 
-The project uses AI techniques to generate new frames in the video.
+The project uses AI techniques to generate new frames in the video. The key factor of the system is the neural network that uses recurrent, convolutional, and dense layers to predict the final frame.
 
 ## Motivation
 
