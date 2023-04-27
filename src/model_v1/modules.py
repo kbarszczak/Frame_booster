@@ -423,7 +423,7 @@ class FBNet(layers.Layer):
         })
         return config
     
-    def call(self, inputs, batch_size):
+    def call(self, inputs, batch_size=1):
         # these are the input images
         input_1 = inputs[0]
         input_2 = inputs[1]
