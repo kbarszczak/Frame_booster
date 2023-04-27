@@ -22,6 +22,7 @@ def get_parser():
     parser.add_argument("-md", "--mode", required=False, type=str, default='fast', help="The processing mode. Either 'fast' or 'low_mem'")
     parser.add_argument("-iw", "--width", required=False, type=int, default=256, help="The width of target images")
     parser.add_argument("-ih", "--height", required=False, type=int, default=144, help="The height of target images")
+    parser.add_argument("-e", "--extension", required=False, type=str, default='avi', help="The final file format")
     return parser.parse_args()
 
 
@@ -82,7 +83,12 @@ def combine_frames(frames, new_frames):
 """
 The function boosts the frames in the pointed video. The method is fast but requires lots of memory due to all the frames being kept in the memory
 """
-def fast_boosting(source_path, target_path, name, model, count, size):
+def fast_boosting(source_path, target_path, name, model, count, size, extension):
+    if extension == "mp4":
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    elif extension == "avi":
+        fourcc = cv2.VideoWriter_fourcc('I','4','2','0')
+
     vidcap = cv2.VideoCapture(source_path)
     success, frame = vidcap.read()
     fps = vidcap.get(cv2.CAP_PROP_FPS)
@@ -106,12 +112,11 @@ def fast_boosting(source_path, target_path, name, model, count, size):
     frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in frames]
     frames = (np.array(frames) * 255).astype('uint8')
 
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(os.path.join(target_path, f'{name}.mp4'), fourcc, count*fps, size)
+    out = cv2.VideoWriter(os.path.join(target_path, f'{name}.{extension}'), fourcc, count*fps, size)
     for frame in frames:
         out.write(frame)
 
-    out = cv2.VideoWriter(os.path.join(target_path, f'{name}_comparision.mp4'), fourcc, count*fps, (size[0]*2, size[1]))
+    out = cv2.VideoWriter(os.path.join(target_path, f'{name}_comparision.{extension}'), fourcc, count*fps, (size[0]*2, size[1]))
     for index in range(len(original_frames)):
         coef = count
         for index_generated in range(coef):
@@ -124,7 +129,7 @@ def fast_boosting(source_path, target_path, name, model, count, size):
 """
 The function boosts fps in the pointed video. It is slow but uses significantly less memory than the fast method
 """
-def low_mem_boosting(source_path, target_path, name, model, count):
+def low_mem_boosting(source_path, target_path, name, model, count, extension):
     pass
 
 
@@ -139,13 +144,15 @@ if __name__ == "__main__":
     mode = parser.mode
     width = parser.width
     height = parser.height
+    extension = parser.extension
     size = (width, height)
 
     assert count in [2, 4, 8, 16], "Count has to be one of 2, 4, 8, 16"
     assert mode in ['fast', 'low_mem'], "Mode has to be either 'fast' or 'low_mem'"
+    assert extension in ['mp4', 'avi'], "Extension is expected to be one of the following: 'mp4', 'avi'"
 
     model = load_model(model_path)
     if mode == 'fast':
-        fast_boosting(source_path, target_path, name, model, count, size)
+        fast_boosting(source_path, target_path, name, model, count, size, extension)
     elif mode == 'low_mem':
-        low_mem_boosting(source_path, target_path, name, model, count, size)
+        low_mem_boosting(source_path, target_path, name, model, count, size, extension)

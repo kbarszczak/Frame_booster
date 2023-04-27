@@ -188,7 +188,6 @@ def custom(base_path, target_path, size, interpolation, train_limit, test_limit,
 
 
 if __name__ == "__main__":
-    # try:
     parser = get_parser()
     source_path = parser.source
     target_path = parser.target
@@ -215,5 +214,3 @@ if __name__ == "__main__":
         vimeo90k(source_path, target_path, size, interpolation, train_limit, test_limit, valid_split)
     elif loader == "custom":
         custom(source_path, target_path, size, interpolation, train_limit, test_limit, valid_split, delay)
-    # except Exception as e:
-    #     print(e)
