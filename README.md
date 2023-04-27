@@ -28,6 +28,13 @@ todo
 
 ## How to use?
 
+```
+python frame_generator.py -s 'E:\Data\Video_Frame_Interpolation\test\test_2.mp4' -m 'E:\OneDrive - Akademia Górniczo-Hutnicza im. Stanisława Staszica w Krakowie\Programming\Labs\Frame_booster\models\model_v1\FBNet.h5' -t 'E:\Data\Video_Frame_Interpolation\test' -c 2 -vn 'test_2_result_2x'
+python model.py -tr E:\Data\Video_Frame_Interpolation\processed\med_motion\valid_144x256_45.tfrecords -trc 45 -ts E:\Data\Video_Frame_Interpolation\processed\med_motion\test_144x256_10.tfrecords -tsc 10 -v E:\Data\Video_Frame_Interpolation\processed\med_motion\train_144x256_5.tfrecords -vc 5 -t E:\Data\Video_Frame_Interpolation\processed\med_motion -n model
+python create_data.py -s E:\Data\Video_Frame_Interpolation\raw\240fps_horizontal -t E:\Data\Video_Frame_Interpolation\processed\med_motion -l custom -tr 100 -ts 50
+
+```
+
 todo
 
 ## Contribute
