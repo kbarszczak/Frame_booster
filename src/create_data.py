@@ -175,8 +175,8 @@ def custom(base_path, target_path, size, interpolation, train_limit, test_limit,
     print("Splitting the data ...")
     random.shuffle(data)
     train = data[0: train_limit]
-    valid = train[0: int(len(train) * train2valid_split)]
-    train = train[int(len(train) * train2valid_split):]
+    valid = train[int(len(train) * train2valid_split):]
+    train = train[0: int(len(train) * train2valid_split)]
     test = data[train_limit:]
 
     print("Saving the data ...")
