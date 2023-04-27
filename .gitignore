@@ -4,7 +4,8 @@ __pycache__/
 *$py.class
 
 # data & models
-models/*/
+models/custom/*
+models/vimeo90k/*
 results/other/*
 
 # C extensions
