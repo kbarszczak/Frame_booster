@@ -16,7 +16,7 @@ Some results of the model in version 1.0
 
 ![best_6](https://user-images.githubusercontent.com/72699445/235080906-dc429c74-6286-4280-a42c-e79a961aa8fd.png)
 
-And the video that shows the original video on the left and the result of boosting the frame rate by 4 on the right.
+And the video shows the original video on the left and the result of boosting the frame rate 4x on the right.
 
 [![result_video_alt](https://img.youtube.com/vi/844G_KYDchw/0.jpg)](https://youtu.be/844G_KYDchw)
 
