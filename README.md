@@ -8,7 +8,7 @@ The key motivation is to build a system that generates new frames more accuratel
 
 ## Build Status
 
-The FBNet model version v1 is already built and trained using Vimeo90K triplet dataset. There are written scripts that can be used either to train your own version of the net or test already existing one.
+The FBNet model version v1 is already built and trained using Vimeo90K triplet dataset. There are written scripts that can be used either to train your own version of the net or test already existing one. The pretrained model can be found here: models/model_v1/FBNet.h5
 
 ## Screenshots
 
@@ -37,43 +37,70 @@ cd frame_booster
 git clone https://github.com/kbarszczak/Frame_booster .
 ```
 
-2a. Either install the requirements
-```
-pip install -r requirements.txt
-```
+2. Set up python environment
+    1.   Either install the requirements
+    ```
+    pip install -r requirements.txt
+    ```
 
-2b. or create the conda environment and install the requirements inside a conda container
-```
-conda create --name frame_booster
-conda activate frame_booster
-pip install -r requirements.txt
-```
+    2. or create the conda environment and install the requirements inside a conda container
+    ```
+    conda create --name frame_booster
+    conda activate frame_booster
+    pip install -r requirements.txt
+    ```
 
 After these steps, everything is set up and ready to use.
 
 ## How to use?
 
-1. Frame boosting
-
-To generate new frames use the 'src/frame_generator.py' script with the follwoing switches:
+1. **Frame boosting** may be performed by launching the 'src/frame_generator.py' script with the following switches:
 - -s the filename of the source video (absolute or relative)
 - -m the path to the trained model saved in a .h5 format
 - -t the path to a dictionary where the results files will be created
 - -vn the name of the created video
-- -c the boosting rate (2, 4, 8, 16, 32). example: rate 4 will add 3 new frames between each frames in the original video
+- -c the boosting rate (2, 4, 8, 16, 32). example: rate 4 will add 3 new frames between each frame in the original video
 - -e the extension of the result file (mp4, avi)
 - -md the mode of the generator (fast, low_mem)
 - -iw the width of the net input
 - -ih the height of the net input
-
 Example:
 ```
-python src/frame_generator.py -s 'test.mp4' -m 'FBNet.h5' -t 'C:\Users\kamil\test' -c 2 -vn 'test_result_2x' -md fast
+python src/frame_generator.py -s 'test.mp4' -m 'FBNet.h5' -t 'C:/Users/kamil/test' -c 2 -vn 'test_result_2x' -md fast -e avi
 ```
 
-python model.py -tr E:\Data\Video_Frame_Interpolation\processed\med_motion\valid_144x256_45.tfrecords -trc 45 -ts E:\Data\Video_Frame_Interpolation\processed\med_motion\test_144x256_10.tfrecords -tsc 10 -v E:\Data\Video_Frame_Interpolation\processed\med_motion\train_144x256_5.tfrecords -vc 5 -t E:\Data\Video_Frame_Interpolation\processed\med_motion -n model
-python create_data.py -s E:\Data\Video_Frame_Interpolation\raw\240fps_horizontal -t E:\Data\Video_Frame_Interpolation\processed\med_motion -l custom -tr 100 -ts 50
+2. **To train** your own net one may use the 'src/model_v1/model.py' with the switches:
+- -tr the path to the training .tfrecords file
+- -trc the amount of training data
+- -ts the path to the testing .tfrecords file
+- -tsc the amount of testing data
+- -v the path to the validating .tfrecords file
+- -vc the amount of validating data
+- -t the path where trained models will be saved
+- -n the name of the saved model
+- -b the batch size
+- -e the epochs
+- -iw the input images width
+- -ih the input images height
+Example:
+```
+python src/model_v1/model.py -tr train_144x256_19000.tfrecords -trc 19000 -ts test_144x256_1000.tfrecords -tsc 1000 -v valid_144x256_500.tfrecords -vc 500 -t C:/Users/kamil/test -n model -b 5 -e 10
+```
 
+3. **Create your datasets** by running 'src/create_data.py' with the following switches:
+- -s the source path of the raw dataset to process
+- -t the target path where the result files will be created
+- -l the loaded script (vimeo90k, custom). In the case of vimeo90k, the -d parameter is ignored and the source path has to point to the vimeo90k triplet dataset where the following files/dirs are: sequences, tri_trainlist.txt, tri_testlist.txt. In custom, the path has to point to a directory containing only the video files. Each file will be loaded and processed
+- -tr the limit of the train data
+- -ts the limit of the test data
+- -tv the split ratio between training and validating datasets
+- -i the interpolation method (bilinear, bicubic)
+- -iw the width of the target images
+- -ih the height of the target images
+- -d the delay parameres means that d - 1 frames will be skipped between generated data (applies only to -l set to custom)
+Example:
+```
+python src/create_data.py -s C:/Users/kamil/raw/240fps_horizontal -t data -l custom -tr 1000 -ts 500 -tv 0.9 -i bicubic -iw 256 -ih 144 -d 5
 ```
 
 ## Contribute
