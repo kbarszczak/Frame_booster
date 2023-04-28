@@ -1,6 +1,6 @@
 ![banner (1)](https://user-images.githubusercontent.com/72699445/232047516-68669452-efd0-4500-9c52-c4a377ff4a11.png)
 
-The project uses AI techniques to generate new frames in the video. The key factor of the system is the neural network that uses recurrent, convolutional, and dense layers to predict the final frame.
+The project uses AI techniques to generate new frames in the video. The key factor of the system is the neural network that uses mostly convolutional layers to predict the final frame.
 
 ## Motivation
 
@@ -8,23 +8,48 @@ The key motivation is to build a system that generates new frames more accuratel
 
 ## Build Status
 
-Currently, we are creating a proof of concept.
+The FBNet model version v1 is already built and trained using Vimeo90K triplet dataset. There are written scripts that can be used either to train your own version of the net or test already existing one.
 
 ## Screenshots
 
-todo
+Some results of the model in version 1.0
+
+![best_6](https://user-images.githubusercontent.com/72699445/235080906-dc429c74-6286-4280-a42c-e79a961aa8fd.png)
 
 ## Tech/Framework used
 
-todo
+The project uses the following tech/frameworks:
+- python 3.10
+- keras/tensorflow
+- opencv
+- numpy
 
 ## Features
 
-todo
+The net can process every type of video without any restrictions regarding its length. The only restriction is that the generated video is always in size 144x256 px. The net can also be used to predict a single image from 2 similar images rather than predicting the frames based on the sequence of frames.
 
 ## Installation
 
-todo
+1. Clone the repository
+```
+mkdir frame_booster
+cd frame_booster
+git clone https://github.com/kbarszczak/Frame_booster .
+```
+
+2a. Either install the requirements
+```
+pip install -r requirements.txt
+```
+
+2b. or create the conda environment and install the requirements inside a conda container
+```
+conda create --name frame_booster
+conda activate frame_booster
+pip install -r requirements.txt
+```
+
+After these steps, everything is set up and ready to use.
 
 ## How to use?
 
@@ -34,8 +59,6 @@ python model.py -tr E:\Data\Video_Frame_Interpolation\processed\med_motion\valid
 python create_data.py -s E:\Data\Video_Frame_Interpolation\raw\240fps_horizontal -t E:\Data\Video_Frame_Interpolation\processed\med_motion -l custom -tr 100 -ts 50
 
 ```
-
-todo
 
 ## Contribute
 - clone the repository
