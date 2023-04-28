@@ -53,8 +53,24 @@ After these steps, everything is set up and ready to use.
 
 ## How to use?
 
+1. Frame boosting
+
+To generate new frames use the 'src/frame_generator.py' script with the follwoing switches:
+- -s the filename of the source video (absolute or relative)
+- -m the path to the trained model saved in a .h5 format
+- -t the path to a dictionary where the results files will be created
+- -vn the name of the created video
+- -c the boosting rate (2, 4, 8, 16, 32). example: rate 4 will add 3 new frames between each frames in the original video
+- -e the extension of the result file (mp4, avi)
+- -md the mode of the generator (fast, low_mem)
+- -iw the width of the net input
+- -ih the height of the net input
+
+Example:
 ```
-python frame_generator.py -s 'E:\Data\Video_Frame_Interpolation\test\test_2.mp4' -m 'E:\OneDrive - Akademia Górniczo-Hutnicza im. Stanisława Staszica w Krakowie\Programming\Labs\Frame_booster\models\model_v1\FBNet.h5' -t 'E:\Data\Video_Frame_Interpolation\test' -c 2 -vn 'test_2_result_2x'
+python src/frame_generator.py -s 'test.mp4' -m 'FBNet.h5' -t 'C:\Users\kamil\test' -c 2 -vn 'test_result_2x' -md fast
+```
+
 python model.py -tr E:\Data\Video_Frame_Interpolation\processed\med_motion\valid_144x256_45.tfrecords -trc 45 -ts E:\Data\Video_Frame_Interpolation\processed\med_motion\test_144x256_10.tfrecords -tsc 10 -v E:\Data\Video_Frame_Interpolation\processed\med_motion\train_144x256_5.tfrecords -vc 5 -t E:\Data\Video_Frame_Interpolation\processed\med_motion -n model
 python create_data.py -s E:\Data\Video_Frame_Interpolation\raw\240fps_horizontal -t E:\Data\Video_Frame_Interpolation\processed\med_motion -l custom -tr 100 -ts 50
 
@@ -64,3 +80,18 @@ python create_data.py -s E:\Data\Video_Frame_Interpolation\raw\240fps_horizontal
 - clone the repository
 - make the changes
 - create the pull request with a detailed description of your changes
+
+## Acknowledgements
+
+```
+@article{xue2019video,
+  title={Video Enhancement with Task-Oriented Flow},
+  author={Xue, Tianfan and Chen, Baian and Wu, Jiajun and Wei, Donglai and Freeman, William T},
+  journal={International Journal of Computer Vision (IJCV)},
+  volume={127},
+  number={8},
+  pages={1106--1125},
+  year={2019},
+  publisher={Springer}
+}
+```
