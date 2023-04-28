@@ -18,7 +18,7 @@ Some results of the model in version 1.0
 
 And the video shows the original video on the left and the result of boosting the frame rate 4x on the right.
 
-[![result_video_alt](https://img.youtube.com/vi/844G_KYDchw/0.jpg)](https://youtu.be/844G_KYDchw)
+[![result_video_alt](https://img.youtube.com/vi/844G_KYDchw/0.jpg)](https://www.youtube.com/watch?v=844G_KYDchw)
 
 ## Tech/Framework used
 
