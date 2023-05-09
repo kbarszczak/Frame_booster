@@ -116,7 +116,7 @@ def fast_boosting(source_path, target_path, name, model, count, size, extension)
     for frame in frames:
         out.write(frame)
 
-    out = cv2.VideoWriter(os.path.join(target_path, f'{name}_comparision.{extension}'), fourcc, count*fps, (size[0]*2, size[1]))
+    out = cv2.VideoWriter(os.path.join(target_path, f'{name}_comparision.{extension}'), fourcc, (count*fps)/5.0, (size[0]*2, size[1]))
     for index in range(len(original_frames)):
         coef = count
         for index_generated in range(coef):
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     extension = parser.extension
     size = (width, height)
 
-    assert count in [2, 4, 8, 16], "Count has to be one of 2, 4, 8, 16"
+    assert count in [2, 4, 8, 16, 32, 64], "Count has to be one of 2, 4, 8, 16"
     assert mode in ['fast', 'low_mem'], "Mode has to be either 'fast' or 'low_mem'"
     assert extension in ['mp4', 'avi'], "Extension is expected to be one of the following: 'mp4', 'avi'"
 
