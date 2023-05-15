@@ -38,6 +38,13 @@ for layer in VGG_model_5.layers:
 
 
 """
+The output activation returns linear values cropped to range from 0 to 1
+"""
+def output_activation(x):
+    return tf.math.minimum(tf.math.maximum(x, 0), 1)
+
+
+"""
 The perceptual loss function compares two images that differ very little. 
 It cares about the high-level features of the images.
 """

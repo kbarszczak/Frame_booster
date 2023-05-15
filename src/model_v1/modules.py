@@ -67,6 +67,13 @@ def perceptual(y_true, y_pred):
 
 
 """
+The output activation returns linear values cropped to range from 0 to 1
+"""
+def output_activation(x):
+    return tf.math.minimum(tf.math.maximum(x, 0), 1)
+
+
+"""
 The L1 reconstruction loss function makes the final image colors 
 look the same as the colors in the ground-truth image
 """

@@ -163,3 +163,7 @@ class WarpedFeatureFusion(layers.Layer):
 
 class FBNet(layers.Layer):
     pass
+
+
+class perceptual():
+    pass

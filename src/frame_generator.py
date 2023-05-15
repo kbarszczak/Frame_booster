@@ -43,7 +43,8 @@ def load_model(path):
             'l1': modules.l1,
             "ssim": modules.ssim,
             "psnr": modules.psnr,
-            "l2": modules.l2
+            "l2": modules.l2,
+            "output_activation": modules.output_activation
         }
     )
 
