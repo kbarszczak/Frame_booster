@@ -211,8 +211,7 @@ if __name__ == "__main__":
     elif model_version == "v2":
         import model_v2.modules as modules
     elif model_version == "v3":
-        print("WARRNING. The model v3 is not implemented yet. Using model v1.")
-        import model_v1.modules as modules
+        import model_v3.modules as modules
 
     model = load_model(model_path)
     if mode == 'fast':
