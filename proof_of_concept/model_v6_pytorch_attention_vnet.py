@@ -474,14 +474,14 @@ def fit(model, train, valid, optimizer, loss, metrics, epochs, save_freq=500, lo
             end = time.time()
             
             # save the model
-            if step % save_freq == 0 and step > 0:
+            if save_freq is not None and step % save_freq == 0 and step > 0:
                 loss_avg = np.mean(loss_metrics[loss.__name__])
                 if mode == "all" or (mode == "best" and (best_loss is None or best_loss > loss_avg)):
                     filename = f'../models/model_v6/fbnet_l={loss_avg}_e={epoch+1}_t={int(time.time())}.pth'
                     torch.save(model.state_dict(), filename)
                     
             # log the model performance
-            if step % log_perf_freq == 0 and step > 0:
+            if log_perf_freq is not None and step % log_perf_freq == 0 and step > 0:
                 plot_triplet(left, right, y, y_pred.detach())
                 
             # log the state
