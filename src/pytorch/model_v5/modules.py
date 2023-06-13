@@ -162,21 +162,21 @@ class FBNet(nn.Module):
         self.avg_r4_c2 = nn.AvgPool2d(2)
         
         # ------------- Feature warping layers 
-        self.bidirectional_warp_row_1 = BidirectionalFeatureWarp(
+        self.bidirectional_flow_warp_row_1 = BidirectionalFeatureWarp(
             flow_prediction = FlowEstimation(
                 flow_input_chanels = 2*encoder_filters[0][0],
                 flow_info = flow_info[0]
             ),
             interpolation = interpolation
         )
-        self.bidirectional_warp_row_2 = BidirectionalFeatureWarp(
+        self.bidirectional_flow_warp_row_2 = BidirectionalFeatureWarp(
             flow_prediction = FlowEstimation(
                 flow_input_chanels = 2*(encoder_filters[0][1] + encoder_filters[1][0]),
                 flow_info = flow_info[1]
             ),
             interpolation = interpolation
         )
-        self.bidirectional_warp_row_3 = BidirectionalFeatureWarp(
+        self.bidirectional_flow_warp_row_3 = BidirectionalFeatureWarp(
             flow_prediction = FlowEstimation(
                 flow_input_chanels = 2*(encoder_filters[0][2] + encoder_filters[1][1] + encoder_filters[2][0]),
                 flow_info = flow_info[2]
@@ -290,10 +290,10 @@ class FBNet(nn.Module):
         
         # ------------- Warping features at each level
         # Calculate the flow for each level using the input of current level and the upsampled flow from the level + 1
-        bfe_4_i1, bfe_4_i2, bfe_4_f_1_2, bfe_4_f_2_1 = self.bidirectional_warp_row_3(concat_left_row_4, concat_right_row_4, None, None)
-        bfe_3_i1, bfe_3_i2, bfe_3_f_1_2, bfe_3_f_2_1 = self.bidirectional_warp_row_3(concat_left_row_3, concat_right_row_3, bfe_4_f_1_2, bfe_4_f_2_1)
-        bfe_2_i1, bfe_2_i2, bfe_2_f_1_2, bfe_2_f_2_1 = self.bidirectional_warp_row_2(concat_left_row_2, concat_right_row_2, bfe_3_f_1_2, bfe_3_f_2_1)
-        bfe_1_i1, bfe_1_i2, _, _ = self.bidirectional_warp_row_1(input_1_left_cnn_r1_c1, input_1_right_cnn_r1_c1, bfe_2_f_1_2, bfe_2_f_2_1)
+        bfe_4_i1, bfe_4_i2, bfe_4_f_1_2, bfe_4_f_2_1 = self.bidirectional_flow_warp_row_3(concat_left_row_4, concat_right_row_4, None, None)
+        bfe_3_i1, bfe_3_i2, bfe_3_f_1_2, bfe_3_f_2_1 = self.bidirectional_flow_warp_row_3(concat_left_row_3, concat_right_row_3, bfe_4_f_1_2, bfe_4_f_2_1)
+        bfe_2_i1, bfe_2_i2, bfe_2_f_1_2, bfe_2_f_2_1 = self.bidirectional_flow_warp_row_2(concat_left_row_2, concat_right_row_2, bfe_3_f_1_2, bfe_3_f_2_1)
+        bfe_1_i1, bfe_1_i2, _, _ = self.bidirectional_flow_warp_row_1(input_1_left_cnn_r1_c1, input_1_right_cnn_r1_c1, bfe_2_f_1_2, bfe_2_f_2_1)
 
         # Flow estimation output: 
         # * (bfe_1_i1, bfe_2_i1, bfe_3_i1, bfe_4_i1) 

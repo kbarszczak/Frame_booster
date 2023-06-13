@@ -144,7 +144,7 @@ def create_flow_view(model, batches, path):
     # hook registration function
     def get_activation(name):
         def hook(model, input, output):
-            flows[name] = output[1].detach()
+            flows[name] = output[-1].detach()
         return hook
 
     # register hooks
@@ -152,6 +152,10 @@ def create_flow_view(model, batches, path):
         if "flow" in child[0]:
             hooks.append(child[1].register_forward_hook(get_activation(child[0])))
             names.append(child[0])
+
+    # leave the function is there is not such layers
+    if not names:
+        return
     
     data, batch_size = None, batches[0][1].shape[0]
     resize = torchvision.transforms.Resize((batches[0][1].shape[2], batches[0][1].shape[3]), antialias=True)
@@ -199,6 +203,9 @@ def create_attention_view(model, batches, path):
             hooks.append(child[1].ocnn.register_forward_hook(get_activation(child[0], child[1].out_act, child[1].upsample)))
             names.append(child[0])
             
+    # leave the function is there is not such layers
+    if not names:
+        return
     
     data, batch_size = None, batches[0][1].shape[0]
     resize = torchvision.transforms.Resize((batches[0][1].shape[2], batches[0][1].shape[3]), antialias=True)

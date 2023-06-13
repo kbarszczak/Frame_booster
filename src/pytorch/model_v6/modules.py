@@ -4,7 +4,7 @@ import torch
 
 
 class FlowFeatureWarp(nn.Module):
-    def __init__(self, flow_input_chanels, return_flow = True,
+    def __init__(self, flow_input_chanels,
                 flow_info = {
                     "filter_counts": [32, 32, 64, 64, 96, 96, 64, 32],
                     "filter_sizes": [(7, 7), (7, 7), (5, 5), (5, 5), (3, 3), (3, 3), (1, 1), (1, 1)],
@@ -33,9 +33,7 @@ class FlowFeatureWarp(nn.Module):
             
         self.flow = nn.Sequential(*modules)
         self.flow_coef = nn.Parameter(torch.rand(1) + 0.5)
-        self.return_flow = return_flow
-        if self.return_flow:
-            self.upsample = nn.Upsample(scale_factor=(2, 2), mode=interpolation)
+        self.upsample = nn.Upsample(scale_factor=(2, 2), mode=interpolation)
 
     def forward(self, input_1, input_2, upsampled_flow):
         upsampled_flow = upsampled_flow * self.flow_coef
@@ -43,10 +41,7 @@ class FlowFeatureWarp(nn.Module):
         estimated_flow = self.flow(torch.cat([input_1, input_2_warped_1, upsampled_flow], dim=1))
         input_2_warped_1 = FlowFeatureWarp.warp(input_2, estimated_flow)
         
-        if self.return_flow:
-            return input_2_warped_1, self.upsample(estimated_flow)
-        else:
-            return input_2_warped_1
+        return input_2_warped_1, self.upsample(estimated_flow)
     
     @staticmethod
     def warp(image: torch.Tensor, flow: torch.Tensor) -> torch.Tensor:
@@ -159,29 +154,25 @@ class FBNet(nn.Module):
         # ------------- Feature warping layers 
         self.flow_warp_r1 = FlowFeatureWarp(
             flow_input_chanels=2*filters[0]+2, 
-            return_flow=False,
             flow_info=flow_feature_warp[0],
             interpolation=interpolation
         )
         self.flow_warp_r2 = FlowFeatureWarp(
             flow_input_chanels=2*filters[1]+2, 
-            return_flow=True,
             flow_info=flow_feature_warp[1],
             interpolation=interpolation
         )
         self.flow_warp_r3 = FlowFeatureWarp(
             flow_input_chanels=2*filters[2]+2, 
-            return_flow=True,
             flow_info=flow_feature_warp[2],
             interpolation=interpolation
         )
         self.flow_warp_r4 = FlowFeatureWarp(
             flow_input_chanels=2*filters[3]+2, 
-            return_flow=True,
             flow_info=flow_feature_warp[3],
             interpolation=interpolation
         )
-        self.zero_flow = torch.zeros((self.b, 2, self.w//8, self.h//8), device=device)
+        self.zero_flow = torch.zeros((self.b, 2, self.h//8, self.w//8), device=device)
         
         # ------------- Attention layers
         self.attention_r1 = AttentionGate(
@@ -258,7 +249,7 @@ class FBNet(nn.Module):
         warp_r4, flow_r4 = self.flow_warp_r4(input_right_cnn_r4_1, input_left_cnn_r4_1, self.zero_flow)
         warp_r3, flow_r3 = self.flow_warp_r3(input_right_cnn_r3_1, input_left_cnn_r3_1, flow_r4)
         warp_r2, flow_r2 = self.flow_warp_r2(input_right_cnn_r2_1, input_left_cnn_r2_1, flow_r3)
-        warp_r1 = self.flow_warp_r1(input_right_cnn_r1_1, input_left_cnn_r1_1, flow_r2)
+        warp_r1, _ = self.flow_warp_r1(input_right_cnn_r1_1, input_left_cnn_r1_1, flow_r2)
         
         # output:
         # * warp_r4
