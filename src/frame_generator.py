@@ -5,8 +5,6 @@ import math
 import cv2
 import os
 
-from create_data import preprocess
-
 
 """
 The function parses the program arguments
@@ -25,28 +23,6 @@ def get_parser():
     parser.add_argument("-ih", "--height", required=False, type=int, default=144, help="The height of target images")
     parser.add_argument("-e", "--extension", required=False, type=str, default='avi', help="The final file format")
     return parser.parse_args()
-
-
-"""
-The function loads the trained FBNet model
-"""
-def load_model(path):
-    return keras.models.load_model(
-        path,
-        custom_objects = {
-            "PyramidFeatureExtraction": modules.PyramidFeatureExtraction,
-            "BidirectionalFlowEstimation": modules.BidirectionalFlowEstimation,
-            "WarpedFeatureFusion": modules.WarpedFeatureFusion,
-            "FBNet": modules.FBNet,
-            'loss': modules.loss,
-            'perceptual': modules.perceptual,
-            'l1': modules.l1,
-            "ssim": modules.ssim,
-            "psnr": modules.psnr,
-            "l2": modules.l2,
-            "output_activation": modules.output_activation
-        }
-    )
 
 
 """
@@ -98,7 +74,7 @@ def fast_boosting(source_path, target_path, cmp_target_path, model, count, size,
 
     for _ in range(int(math.log2(count))):
         net_input = create_net_input(frames)
-        new_frames = model.predict([net_input[:, 0, :, : ,:], net_input[:, 1, :, : ,:]], batch_size=1)
+        new_frames = model([net_input[:, 0, :, : ,:], net_input[:, 1, :, : ,:]])
         frames = combine_frames(frames, new_frames)
 
     frames = [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in frames]
@@ -155,7 +131,7 @@ def low_mem_boosting(source_path, target_path, cmp_target_path, model, count, si
                     frames_for_net = frames[start:end]
                     net_input = create_net_input(frames_for_net)
 
-                    generated_frames = model.predict([net_input[:, 0, :, : ,:], net_input[:, 1, :, : ,:]], batch_size=1)
+                    generated_frames = model([net_input[:, 0, :, : ,:], net_input[:, 1, :, : ,:]])
                     combined_frames = combine_frames(frames_for_net, generated_frames)
                     if start > 0:
                         combined_frames = combined_frames[1:]
@@ -207,14 +183,18 @@ if __name__ == "__main__":
     elif extension == "avi":
         fourcc = cv2.VideoWriter_fourcc('I','4','2','0')
 
-    if model_version == "v1":
-        import model_v1.modules as modules
-    elif model_version == "v2":
-        import model_v2.modules as modules
-    elif model_version == "v3":
-        import model_v3.modules as modules
 
-    model = load_model(model_path)
+    if model_version in ['v1', 'v2', 'v3']:
+        from tensorflow.data_generator import preprocess
+
+    if model_version == "v1":
+        import tensorflow.model_v1.modules as modules
+    elif model_version == "v2":
+        import tensorflow.model_v2.modules as modules
+    elif model_version == "v3":
+        import tensorflow.model_v3.modules as modules
+
+    model = modules.load_model(model_path)
     if mode == 'fast':
         fast_boosting(
             source_path, 
