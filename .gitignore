@@ -9,6 +9,7 @@ models/vimeo90k/*
 results/other/*
 results/model_v3/cnn*
 results/model_v3/conv*
+tmp/*
 
 # C extensions
 *.so

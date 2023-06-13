@@ -1,7 +1,7 @@
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import argparse
+import cv2
 import os
 
 import torch.utils.data as data
@@ -109,52 +109,130 @@ class FBNetLoss(torch.nn.Module):
         return 1 - psnr / 40.0
 
 
-def create_output_view(left, right, y, y_pred, figsize=(20, 4)):
-    plt.figure(figsize=figsize)
-    data = torch.cat([
-        torchvision.transforms.functional.rotate(right, 90, expand=True),
-        torchvision.transforms.functional.rotate(y_pred, 90, expand=True), 
-        torchvision.transforms.functional.rotate(y, 90, expand=True), 
-        torchvision.transforms.functional.rotate(left, 90, expand=True)
-    ], dim=0)
-    grid = torchvision.utils.make_grid(data, nrow=left.shape[0])
-    grid = torchvision.transforms.functional.rotate(grid, 270, expand=True)
-    plt.imshow(torch.permute(grid, (1, 2, 0)).cpu())
-    plt.axis('off')
-    plt.show()
+def save_img(path, img):
+    img = (img * 255).astype('uint8')
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(path, img)
 
 
-def create_flow_view(left, right, y, y_pred, figsize=(20, 4)):
-    plt.figure(figsize=figsize)
-    data = torch.cat([
-        torchvision.transforms.functional.rotate(right, 90, expand=True),
-        torchvision.transforms.functional.rotate(y_pred, 90, expand=True), 
-        torchvision.transforms.functional.rotate(y, 90, expand=True), 
-        torchvision.transforms.functional.rotate(left, 90, expand=True)
-    ], dim=0)
-    grid = torchvision.utils.make_grid(data, nrow=left.shape[0])
-    grid = torchvision.transforms.functional.rotate(grid, 270, expand=True)
-    plt.imshow(torch.permute(grid, (1, 2, 0)).cpu())
-    plt.axis('off')
-    plt.show()
+def create_output_view(model, batches, path):
+    data, batch_size = None, batches[0][1].shape[0]
+    for batch in batches:
+        # forward pass (hooks register outputs)
+        left, right, y = batch[0][0].to(device), batch[0][1].to(device), batch[1].to(device)
+        y_pred = model(left, right).detach()
+
+        # process each sample in the batch
+        for index in range(batch_size):
+            cat_list = [
+                torch.unsqueeze(left[index, :, :, :], dim=0),
+                torch.unsqueeze(y[index, :, :, :], dim=0),
+                torch.unsqueeze(y_pred[index, :, :, :], dim=0),
+                torch.unsqueeze(right[index, :, :, :], dim=0)
+            ]
+            if data is not None:
+                cat_list = [data] + cat_list
+            data = torch.cat(cat_list, dim=0)
+
+    grid = torchvision.utils.make_grid(data, nrow=4)
+    save_img(path, torch.permute(grid, (1, 2, 0)).cpu().numpy())
 
 
-def create_attention_view(left, right, y, y_pred, figsize=(20, 4)):
-    plt.figure(figsize=figsize)
-    data = torch.cat([
-        torchvision.transforms.functional.rotate(right, 90, expand=True),
-        torchvision.transforms.functional.rotate(y_pred, 90, expand=True), 
-        torchvision.transforms.functional.rotate(y, 90, expand=True), 
-        torchvision.transforms.functional.rotate(left, 90, expand=True)
-    ], dim=0)
-    grid = torchvision.utils.make_grid(data, nrow=left.shape[0])
-    grid = torchvision.transforms.functional.rotate(grid, 270, expand=True)
-    plt.imshow(torch.permute(grid, (1, 2, 0)).cpu())
-    plt.axis('off')
-    plt.show()
+def create_flow_view(model, batches, path):
+    flows, names, hooks = {}, [], []
+    
+    # hook registration function
+    def get_activation(name):
+        def hook(model, input, output):
+            flows[name] = output[1].detach()
+        return hook
+
+    # register hooks
+    for child in model.named_children():
+        if "flow" in child[0]:
+            hooks.append(child[1].register_forward_hook(get_activation(child[0])))
+            names.append(child[0])
+    
+    data, batch_size = None, batches[0][1].shape[0]
+    resize = torchvision.transforms.Resize((batches[0][1].shape[2], batches[0][1].shape[3]), antialias=True)
+
+    for batch in batches:
+        # forward pass (hooks register outputs)
+        left, right = batch[0][0].to(device), batch[0][1].to(device)
+        _ = model(left, right).detach()
+
+        # process each sample in the batch
+        for index in range(batch_size):
+            cat_list = [torch.unsqueeze(left[index, :, :, :], dim=0)]
+            
+            for name in names:
+                flow = flows[name][index, :, :, :]
+                flow = resize(torchvision.utils.flow_to_image(flow)) / 255.0
+                cat_list.append(torch.unsqueeze(flow, dim=0))
+                
+            cat_list.append(torch.unsqueeze(right[index, :, :, :], dim=0))
+            if data is not None:
+                cat_list = [data] + cat_list
+            data = torch.cat(cat_list, dim=0)
+
+    # remove hooks
+    for hook in hooks:
+        hook.remove()
+
+    # create the grid and save the data
+    grid = torchvision.utils.make_grid(data, nrow=(2 + len(names)))
+    save_img(path, torch.permute(grid, (1, 2, 0)).cpu().numpy())
 
 
-def fit(model, train, valid, optimizer, loss, metrics, epochs, target_path, name, save_freq=500, log_freq=1, log_perf_freq=2500, mode="best"):  
+def create_attention_view(model, batches, path):
+    attentions, names, hooks = {}, [], []
+    
+    # hook registration function
+    def get_activation(name, act, upsample):
+        def hook(model, input, output):
+            attentions[name] = upsample(act(output.detach()))
+        return hook
+
+    # register hooks
+    for child in model.named_children():
+        if "attention" in child[0]:
+            hooks.append(child[1].ocnn.register_forward_hook(get_activation(child[0], child[1].out_act, child[1].upsample)))
+            names.append(child[0])
+            
+    
+    data, batch_size = None, batches[0][1].shape[0]
+    resize = torchvision.transforms.Resize((batches[0][1].shape[2], batches[0][1].shape[3]), antialias=True)
+    gray2rgb = torchvision.transforms.Lambda(lambda x: x.repeat(3, 1, 1) if x.size(0)==1 else x)
+
+    for batch in batches:
+        # forward pass (hooks register outputs)
+        left, right = batch[0][0].to(device), batch[0][1].to(device)
+        _ = model(left, right).detach()
+        
+        # process each sample in the batch
+        for index in range(batch_size):
+            cat_list = [torch.unsqueeze(left[index, :, :, :], dim=0)]
+            
+            for name in names:
+                attention = attentions[name][index, :, :, :]
+                attention = gray2rgb(resize(attention))
+                cat_list.append(torch.unsqueeze(attention, dim=0))
+                
+            cat_list.append(torch.unsqueeze(right[index, :, :, :], dim=0))
+            if data is not None:
+                cat_list = [data] + cat_list
+            data = torch.cat(cat_list, dim=0)
+
+    # remove hooks
+    for hook in hooks:
+        hook.remove()
+
+    # create the grid and save the data
+    grid = torchvision.utils.make_grid(data, nrow=(2 + len(names)))
+    save_img(path, torch.permute(grid, (1, 2, 0)).cpu().numpy())
+
+
+def fit(model, train, valid, vis_batches, optimizer, loss, metrics, epochs, target_path, name, save_freq=500, log_freq=1, log_perf_freq=2500, mode="best"):  
     # create dict for a history
     history = {loss.__name__: []} | {metric.__name__: [] for metric in metrics} | {'val_' + loss.__name__: []} | {"val_" + metric.__name__: [] for metric in metrics}
     best_loss = None
@@ -169,9 +247,6 @@ def fit(model, train, valid, optimizer, loss, metrics, epochs, target_path, name
         # loop over batches
         model.train(True)
         for step, record in enumerate(train):
-            if step >= 10:  # todo: delete 
-                break
-
             start = time.time()
             
             # extract the data
@@ -203,14 +278,17 @@ def fit(model, train, valid, optimizer, loss, metrics, epochs, target_path, name
             if save_freq is not None and step % save_freq == 0 and step > 0:
                 loss_avg = np.mean(loss_metrics[loss.__name__])
                 if mode == "all" or (mode == "best" and (best_loss is None or best_loss > loss_avg)):
-                    filename = os.path.join(target_path, f'{name}_l={loss_avg}_e={epoch+1}_t={int(time.time())}.pt')
+                    filename = os.path.join(target_path, 'models', f'{name}_l={loss_avg}_e={epoch+1}_s={step+1}_t={int(time.time())}.pt')
                     torch.save(model.state_dict(), filename)
                     
             # show the model performance
             if log_perf_freq is not None and step % log_perf_freq == 0 and step > 0:
-                create_output_view(left, right, y, y_pred.detach())
-                create_flow_view(model, left, right)
-                create_attention_view(model, left, right)
+                model.train(False)
+                stamp = int(time.time())
+                create_output_view(model, vis_batches, os.path.join(target_path, 'outputs', f'output_e={epoch+1}_s={step+1}_t={stamp}.png'))
+                create_flow_view(model, vis_batches, os.path.join(target_path, 'flows', f'flow_e={epoch+1}_s={step+1}_t={stamp}.png'))
+                create_attention_view(model, vis_batches, os.path.join(target_path, 'attentions', f'attention_e={epoch+1}_s={step+1}_t={stamp}.png'))
+                model.train(True)
                 
             # log the state
             if step % log_freq == 0:
@@ -229,9 +307,6 @@ def fit(model, train, valid, optimizer, loss, metrics, epochs, target_path, name
         # process the full validating dataset
         model.train(False)
         for step, record in enumerate(valid):
-            if step >= 10:  # todo: delete 
-                break
-
             left, right, y = record[0][0].to(device), record[0][1].to(device), record[1].to(device)
 
             # forward pass
@@ -257,10 +332,11 @@ def get_parser():
     parser = argparse.ArgumentParser(description='Training FBNet model')
     parser.add_argument("-ver", "--version", required=True, type=str, help="The version of the model")
     parser.add_argument("-n", "--name", required=False, type=str, default="fbnet", help="The name of the created model")
-    parser.add_argument("-t", "--target", required=False, type=str, default="..\\..\\models", help="The path where data is stored during the straining (such as history etc.)")
+    parser.add_argument("-t", "--target", required=False, type=str, default="..\\..\\tmp", help="The path where data is stored during the straining (such as history etc.)")
     parser.add_argument("-d", "--data", required=False, type=str, default="E:\\Data\\Video_Frame_Interpolation\\processed\\vimeo90k_pytorch", help="The source path of the dataset")
     parser.add_argument("-tr", "--train", required=False, type=str, default="train.txt", help="The name of file that contains training samples split")
-    parser.add_argument("-v", "--valid", required=False, type=str, default="valid.txt", help="The source path of the validating dataset")
+    parser.add_argument("-v", "--valid", required=False, type=str, default="valid.txt", help="The name of file that contains validating samples split")
+    parser.add_argument("-vis", "--visualization", required=False, type=str, default="vis.txt", help="The name of file that contains vaisualizing samples split")
     parser.add_argument("-dev", "--device", required=False, type=str, default="gpu", help="The device used during the training (cpu or gpu)")
     parser.add_argument("-b", "--batch_size", required=False, type=int, default=2, help="The batch size")
     parser.add_argument("-e", "--epochs", required=False, type=int, default=10, help="The epochs count")
@@ -269,9 +345,7 @@ def get_parser():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
-    parser = get_parser()
-
+def run(parser):
     # verify arguments
     assert parser.version in ['v5', 'v6', 'v6_1'], f'Version {parser.version} is not currently implemented'
     assert parser.device in ['gpu', 'cpu'], "Device can only be set to gpu (cuda:0) or cpu"
@@ -280,14 +354,6 @@ if __name__ == "__main__":
     assert parser.epochs > 0, "Epochs cannot be negative"
     assert parser.width > 0, "Width cannot be negative"
     assert parser.height > 0, "Height cannot be negative"
-
-    # select device
-    if parser.device == 'gpu':
-        if not torch.cuda.is_available():
-            raise Exception("Cuda is not available")
-        device = torch.device("cuda:0")
-    else:
-        device = torch.device("cpu")
 
     # import proper model version
     if parser.version == "v5":
@@ -302,6 +368,8 @@ if __name__ == "__main__":
         raise FileNotFoundError(f"Cannot find the following dir '{parser.data}'")
     if not os.path.exists(os.path.join(parser.data, 'data')):
         raise FileNotFoundError(f"Cannot find the following dir '{os.path.join(parser.data, 'data')}'")
+    if not os.path.exists(os.path.join(parser.data, 'vis')):
+        raise FileNotFoundError(f"Cannot find the following dir '{os.path.join(parser.data, 'vis')}'")
     if not os.path.exists(os.path.join(parser.data, parser.train)):
         raise FileNotFoundError(f"Cannot find the following file '{os.path.join(parser.data, parser.train)}'")
     if not os.path.exists(os.path.join(parser.data, parser.valid)):
@@ -311,10 +379,18 @@ if __name__ == "__main__":
     if not os.path.exists(parser.target):
         raise FileNotFoundError(f"Cannot find the following dir '{parser.target}'")
     
-    stamp = int(time.time())
-    target_path = os.path.join(parser.target, f'model_{parser.version}', str(stamp))
+    target_path = os.path.join(parser.target, f'model_{parser.version}')
     if not os.path.exists(target_path):
         os.mkdir(target_path)
+
+    stamp = int(time.time())
+    target_path = os.path.join(target_path, str(stamp))
+    if not os.path.exists(target_path):
+        os.mkdir(target_path)
+        os.mkdir(os.path.join(target_path, 'flows'))
+        os.mkdir(os.path.join(target_path, 'models'))
+        os.mkdir(os.path.join(target_path, 'attentions'))
+        os.mkdir(os.path.join(target_path, 'outputs'))
 
     # prepare the dataloader
     train_dataloader = data.DataLoader(
@@ -344,6 +420,21 @@ if __name__ == "__main__":
         num_workers=2
     )
 
+    vis_dataloader = data.DataLoader(
+        dataset = ByteImageDataset(
+            path = parser.data,
+            subdir = 'vis',
+            split_filename = parser.visualization,
+            shape = (parser.height, parser.width, 3)
+        ),
+        batch_size = parser.batch_size,
+        drop_last = True
+    )
+
+    # prepare data for visualization
+    vis_iterator = iter(vis_dataloader)
+    vis_batches = [next(vis_iterator) for bi in range(len(vis_dataloader)) if bi in [0, 1, 2, 3, 4, 5]]
+
     # print the size of training and validating dataset
     print(f"Training {parser.name}_{parser.version}")
     print(f'Loaded the dataset from: "{parser.data}"')
@@ -364,6 +455,7 @@ if __name__ == "__main__":
         model = model, 
         train = train_dataloader,
         valid = valid_dataloader,
+        vis_batches = vis_batches,
         optimizer = optimizer, 
         loss = loss, 
         metrics = [loss.psnr],
@@ -372,11 +464,26 @@ if __name__ == "__main__":
         name = parser.name,
         save_freq = 1000,
         log_freq = 1,
-        log_perf_freq = 2500,
+        log_perf_freq = 1000,
         mode = "best"
     )
 
     # save both the model and the history
-    torch.save(model.state_dict(), os.path.join(target_path, f'{parser.name}_e={parser.epochs}_t={stamp}.pt'))
-    with open(os.path.join(target_path, f'{parser.name}_history_e={parser.epochs}_t={stamp}.pickle'), 'wb') as handle:
+    torch.save(model.state_dict(), os.path.join(target_path, f'{parser.name}.pt'))
+    with open(os.path.join(target_path, f'{parser.name}_history.pickle'), 'wb') as handle:
         pickle.dump(history, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+if __name__ == "__main__":
+    parser = get_parser()
+
+    # select device
+    if parser.device == 'gpu':
+        if not torch.cuda.is_available():
+            raise Exception("Cuda is not available")
+        device = torch.device("cuda:0")
+    else:
+        device = torch.device("cpu")
+
+    run(parser)
+    
