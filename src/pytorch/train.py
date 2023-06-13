@@ -203,7 +203,7 @@ def fit(model, train, valid, optimizer, loss, metrics, epochs, target_path, name
             if save_freq is not None and step % save_freq == 0 and step > 0:
                 loss_avg = np.mean(loss_metrics[loss.__name__])
                 if mode == "all" or (mode == "best" and (best_loss is None or best_loss > loss_avg)):
-                    filename = os.path.join(target_path, f'{name}_l={loss_avg}_e={epoch+1}_t={int(time.time())}.pth')
+                    filename = os.path.join(target_path, f'{name}_l={loss_avg}_e={epoch+1}_t={int(time.time())}.pt')
                     torch.save(model.state_dict(), filename)
                     
             # show the model performance
@@ -257,7 +257,7 @@ def get_parser():
     parser = argparse.ArgumentParser(description='Training FBNet model')
     parser.add_argument("-ver", "--version", required=True, type=str, help="The version of the model")
     parser.add_argument("-n", "--name", required=False, type=str, default="fbnet", help="The name of the created model")
-    parser.add_argument("-t", "--target", required=False, type=str, default="E:\\OneDrive - Akademia Górniczo-Hutnicza im. Stanisława Staszica w Krakowie\\Programming\\Labs\\Frame_booster\\models", help="The path where data is stored during the straining (such as history etc.)")
+    parser.add_argument("-t", "--target", required=False, type=str, default="..\\..\\models", help="The path where data is stored during the straining (such as history etc.)")
     parser.add_argument("-d", "--data", required=False, type=str, default="E:\\Data\\Video_Frame_Interpolation\\processed\\vimeo90k_pytorch", help="The source path of the dataset")
     parser.add_argument("-tr", "--train", required=False, type=str, default="train.txt", help="The name of file that contains training samples split")
     parser.add_argument("-v", "--valid", required=False, type=str, default="valid.txt", help="The source path of the validating dataset")
@@ -270,7 +270,6 @@ def get_parser():
 
 
 if __name__ == "__main__":
-    # try:
     parser = get_parser()
 
     # verify arguments
@@ -371,16 +370,13 @@ if __name__ == "__main__":
         epochs = parser.epochs,
         target_path = target_path, 
         name = parser.name,
-        save_freq = 1,
+        save_freq = 1000,
         log_freq = 1,
         log_perf_freq = 2500,
         mode = "best"
     )
 
     # save both the model and the history
-    torch.save(model.state_dict(), os.path.join(target_path, f'{parser.name}_e={parser.epochs}_t={stamp}.pth'))
+    torch.save(model.state_dict(), os.path.join(target_path, f'{parser.name}_e={parser.epochs}_t={stamp}.pt'))
     with open(os.path.join(target_path, f'{parser.name}_history_e={parser.epochs}_t={stamp}.pickle'), 'wb') as handle:
         pickle.dump(history, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-    # except Exception as e:
-    #     print(e)
