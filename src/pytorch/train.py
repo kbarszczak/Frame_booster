@@ -39,46 +39,33 @@ class ByteImageDataset(data.Dataset):
 class FBNetLoss(torch.nn.Module):
 
     class VGGPerceptualLoss(torch.nn.Module):
-        def __init__(self, resize=True):
+        def __init__(self):
             super(FBNetLoss.VGGPerceptualLoss, self).__init__()
             self.__name__ = "perceptual"
-            blocks = []
-            blocks.append(torchvision.models.vgg16(weights='DEFAULT').features[:4].eval().to(device))
-            blocks.append(torchvision.models.vgg16(weights='DEFAULT').features[4:9].eval().to(device))
-            blocks.append(torchvision.models.vgg16(weights='DEFAULT').features[9:16].eval().to(device))
-            blocks.append(torchvision.models.vgg16(weights='DEFAULT').features[16:23].eval().to(device))
-            for bl in blocks:
-                for p in bl.parameters():
-                    p.requires_grad = False
+            blocks = [
+                torchvision.models.vgg16(weights='DEFAULT').features[:4].eval().to(device),
+                torchvision.models.vgg16(weights='DEFAULT').features[4:9].eval().to(device),
+                torchvision.models.vgg16(weights='DEFAULT').features[9:16].eval().to(device),
+                torchvision.models.vgg16(weights='DEFAULT').features[16:23].eval().to(device)
+            ]
+            
+            for block in blocks:
+                for parameter in block.parameters():
+                    parameter.requires_grad = False
+
             self.blocks = torch.nn.ModuleList(blocks).to(device)
-            self.transform = torch.nn.functional.interpolate
-            self.resize = resize
             self.register_buffer("mean", torch.tensor([0.485, 0.456, 0.406], device=device).view(1, 3, 1, 1))
             self.register_buffer("std", torch.tensor([0.229, 0.224, 0.225], device=device).view(1, 3, 1, 1))
 
-        def forward(self, input, target, feature_layers=[0, 1, 2, 3], style_layers=[]):
-            if input.shape[1] != 3:
-                input = input.repeat(1, 3, 1, 1)
-                target = target.repeat(1, 3, 1, 1)
-            input = (input-self.mean) / self.std
-            target = (target-self.mean) / self.std
-            if self.resize:
-                input = self.transform(input, mode='bilinear', size=(224, 224), align_corners=False)
-                target = self.transform(target, mode='bilinear', size=(224, 224), align_corners=False)
+        def forward(self, y_true, y_pred):
+            y_true = (y_true-self.mean) / self.std
+            y_pred = (y_pred-self.mean) / self.std
             loss = 0.0
-            x = input
-            y = target
-            for i, block in enumerate(self.blocks):
-                x = block(x)
-                y = block(y)
-                if i in feature_layers:
-                    loss += torch.nn.functional.l1_loss(x, y)
-                if i in style_layers:
-                    act_x = x.reshape(x.shape[0], x.shape[1], -1)
-                    act_y = y.reshape(y.shape[0], y.shape[1], -1)
-                    gram_x = act_x @ act_x.permute(0, 2, 1)
-                    gram_y = act_y @ act_y.permute(0, 2, 1)
-                    loss += torch.nn.functional.l1_loss(gram_x, gram_y)
+            for block in self.blocks:
+                y_true = block(y_true)
+                y_pred = block(y_pred)
+                loss += torch.nn.functional.l1_loss(y_true, y_pred)
+
             return loss
 
     def __init__(self, pw=0.5, psnrw=1.0, msew=10.0, maew=5.0):
@@ -87,11 +74,11 @@ class FBNetLoss(torch.nn.Module):
         self.psnrw = psnrw
         self.msew = msew
         self.maew = maew
-        self._perceptual_loss = FBNetLoss.VGGPerceptualLoss()
+        self.perceptual_loss = FBNetLoss.VGGPerceptualLoss()
         self.__name__ = "loss"
 
     def forward(self, y_true, y_pred):
-        perceptual_loss_ = self._perceptual_loss(y_true, y_pred)
+        perceptual_loss_ = self.perceptual_loss(y_true, y_pred)
         psnr_ = self.psnr(y_true, y_pred)
         mse_ = self.mse(y_true, y_pred)
         mae_ = self.mae(y_true, y_pred)
@@ -154,7 +141,7 @@ def create_flow_view(model, batches, path):
             names.append(child[0])
 
     # leave the function is there is not such layers
-    if not names:
+    if not hooks:
         return
     
     data, batch_size = None, batches[0][1].shape[0]
@@ -204,7 +191,7 @@ def create_attention_view(model, batches, path):
             names.append(child[0])
             
     # leave the function is there is not such layers
-    if not names:
+    if not hooks:
         return
     
     data, batch_size = None, batches[0][1].shape[0]
@@ -287,6 +274,7 @@ def fit(model, train, valid, vis_batches, optimizer, loss, metrics, epochs, targ
                 if mode == "all" or (mode == "best" and (best_loss is None or best_loss > loss_avg)):
                     filename = os.path.join(target_path, 'models', f'{name}_l={loss_avg}_e={epoch+1}_s={step+1}_t={int(time.time())}.pt')
                     torch.save(model.state_dict(), filename)
+                    best_loss = loss_avg
                     
             # show the model performance
             if log_perf_freq is not None and step % log_perf_freq == 0 and step > 0:
@@ -354,7 +342,7 @@ def get_parser():
 
 def run(parser):
     # verify arguments
-    assert parser.version in ['v5', 'v6', 'v6_1'], f'Version {parser.version} is not currently implemented'
+    assert parser.version in ['v5', 'v6', 'v6_1', 'v6_2', 'v6_3', 'v6_4', 'v6_5'], f'Version {parser.version} is not currently implemented'
     assert parser.device in ['gpu', 'cpu'], "Device can only be set to gpu (cuda:0) or cpu"
     assert parser.name, "Name cannot be empty"
     assert parser.batch_size > 0, "Batch size cannot be negative"
@@ -369,6 +357,14 @@ def run(parser):
         import model_v6.modules as modules
     elif parser.version == "v6_1":
         import model_v6_1.modules as modules
+    elif parser.version == "v6_2":
+        import model_v6_2.modules as modules
+    elif parser.version == "v6_3":
+        import model_v6_3.modules as modules
+    elif parser.version == "v6_4":
+        import model_v6_4.modules as modules
+    elif parser.version == "v6_5":
+        import model_v6_5.modules as modules
 
     # check if dataset exists
     if not os.path.exists(parser.data):
@@ -464,14 +460,14 @@ def run(parser):
         valid = valid_dataloader,
         vis_batches = vis_batches,
         optimizer = optimizer, 
-        loss = loss, 
-        metrics = [loss.psnr],
+        loss = loss.perceptual_loss, 
+        metrics = [loss.psnr, loss.mse, loss.mae],
         epochs = parser.epochs,
         target_path = target_path, 
         name = parser.name,
         save_freq = 1000,
         log_freq = 1,
-        log_perf_freq = 1000,
+        log_perf_freq = 500,
         mode = "best"
     )
 
