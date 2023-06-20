@@ -408,6 +408,9 @@ def save_history_plot(path, history, figsize=(10,5), exclude=None, use_norm=True
         plt.plot(steps, values, colors[index], label=metric)
         plt.plot(steps, history[f'val_{metric}'], colors[index]+'--', label=f"val_{metric}")
     
+    if not use_norm:
+        plt.yticks(np.linspace(0, 5, 21))
+        plt.ylim(0, 5)
     plt.title("Comparision of training and validating scores")
     plt.xlabel('Steps')
     plt.ylabel("Values" if not use_norm else "Values normalized")

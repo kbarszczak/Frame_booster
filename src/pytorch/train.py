@@ -29,7 +29,7 @@ def get_parser():
     return parser.parse_args()
 
 
-def train(train_dataloader, valid_dataloader, test_dataloader, vis_batches, batch_size, epochs, modules, model_name, model_version, data_path, target_path, height, width, save_freq, log_freq):
+def train(train_dataloader, valid_dataloader, test_dataloader, vis_batches, batch_size, epochs, modules, model_name, model_version, data_path, target_path, height, width, save_freq, log_freq, device):
     # print the size of training and validating dataset
     print(f"Training {model_name}_{model_version}")
     print(f'Loaded the dataset from: "{data_path}"')
@@ -113,6 +113,8 @@ def train(train_dataloader, valid_dataloader, test_dataloader, vis_batches, batc
     print(plot_50_loss_path)
     print(plot_50_raw_loss_path)
 
+    return score[loss.__name__]
+
 
 def run(parser):
     # verify arguments
@@ -165,7 +167,7 @@ def run(parser):
     if not os.path.exists(target_path):
         os.mkdir(target_path)
 
-    # prepare the dataloader
+    # prepare the dataloaders
     train_dataloader = data.DataLoader(
         dataset = utils.ByteImageDataset(
             path = parser.data,
@@ -223,7 +225,7 @@ def run(parser):
     vis_batches = [next(vis_iterator) for bi in range(len(vis_dataloader)) if bi in [0, 1, 2]]
 
     # launch training function
-    train(
+    _ = train(
         train_dataloader=train_dataloader,
         valid_dataloader=valid_dataloader,
         test_dataloader=test_dataloader,
@@ -238,7 +240,8 @@ def run(parser):
         height=parser.height,
         width=parser.width,
         save_freq=parser.save_freq,
-        log_freq=parser.log_freq
+        log_freq=parser.log_freq,
+        device=device
     )
 
 
