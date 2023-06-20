@@ -3,6 +3,23 @@ import torch.nn as nn
 import torchvision
 import torch
 
+
+"""
+This module contains fbnet v6_5 with the following features:
+- Overall Attention U-Net with double feature warping
+- Warp both images in opposite directions
+- Dense CNN flow prediciton architecture
+- Flow concatenation not addition
+- Attention gate usage
+- Encoder implemented as Dense Conv Net with AvgPool2d as resizing layers
+- Decoder features addition
+- Use of upsample and resize layers to change size
+- Use of the proper coef to the flow upscaling
+- Use of custom Conv2dBlock (in_channels -> out_channels -> out_channels, more conv2d layers at each level, 2 vs 1)
+- Last level of the decoder is processed by Conv2dBlock
+"""
+
+
 class TReLU(nn.Module):
     def __init__(self, lower=0.0, upper=1.0, **kwargs):
         super(TReLU, self).__init__(**kwargs)
@@ -271,17 +288,20 @@ class FBNet(nn.Module):
         warp_r4_up = self.up_r4(warp_r4)
         
         # row 3
-        warp_r3 = self.attention_r3(warp_r4, warp_left_r3 + warp_right_r3 + warp_r4_up)
+        warp_r3 = self.attention_r3(warp_r4, warp_left_r3 + warp_right_r3)
+        warp_r3 = warp_r3 + warp_r4_up
         warp_r3 = self.conv_dec_block_r3(warp_r3)
         warp_r3_up = self.up_r3(warp_r3)
-        
+
         # row 2
-        warp_r2 = self.attention_r2(warp_r3, warp_left_r2 + warp_right_r2 + warp_r3_up)
+        warp_r2 = self.attention_r2(warp_r3, warp_left_r2 + warp_right_r2)
+        warp_r2 = warp_r2 + warp_r3_up
         warp_r2 = self.conv_dec_block_r2(warp_r2)
         warp_r2_up = self.up_r2(warp_r2)
         
         # row 1
-        warp_r1 = self.attention_r1(warp_r2, warp_left_r1 + warp_right_r1 + warp_r2_up)
+        warp_r1 = self.attention_r1(warp_r2, warp_left_r1 + warp_right_r1)
+        warp_r1 = warp_r1 + warp_r2_up
         warp_r1 = self.conv_dec_block_r1(warp_r1)
         result = self.act_out(warp_r1)
         

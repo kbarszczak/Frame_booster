@@ -3,6 +3,19 @@ import torch.nn as nn
 import torch
 
 
+"""
+This module contains fbnet v6 with the following features:
+- Overall Attention U-Net with single feature warping
+- Warp only one image
+- Feedforward CNN flow prediciton architecture with learnable scale coef
+- Flow concatenation not addition
+- Attention gate usage
+- Encoder with filters outputs on each level (without feature stacking)
+- Decoder features concatenation
+- Use of conv2d transpose to change size
+"""
+
+
 class FlowFeatureWarp(nn.Module):
     def __init__(self, flow_input_chanels,
                 flow_info = {

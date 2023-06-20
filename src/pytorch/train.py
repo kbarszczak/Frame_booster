@@ -328,7 +328,7 @@ def get_parser():
     parser.add_argument("-ver", "--version", required=True, type=str, help="The version of the model")
     parser.add_argument("-n", "--name", required=False, type=str, default="fbnet", help="The name of the created model")
     parser.add_argument("-t", "--target", required=False, type=str, default="..\\..\\tmp", help="The path where data is stored during the straining (such as history etc.)")
-    parser.add_argument("-d", "--data", required=False, type=str, default="E:\\Data\\Video_Frame_Interpolation\\processed\\vimeo90k_pytorch", help="The source path of the dataset")
+    parser.add_argument("-d", "--data", required=False, type=str, default="D:\\Data\\Video_Frame_Interpolation\\vimeo90k_pytorch", help="The source path of the dataset")
     parser.add_argument("-tr", "--train", required=False, type=str, default="train.txt", help="The name of file that contains training samples split")
     parser.add_argument("-v", "--valid", required=False, type=str, default="valid.txt", help="The name of file that contains validating samples split")
     parser.add_argument("-vis", "--visualization", required=False, type=str, default="vis.txt", help="The name of file that contains vaisualizing samples split")
@@ -342,7 +342,7 @@ def get_parser():
 
 def run(parser):
     # verify arguments
-    assert parser.version in ['v5', 'v6', 'v6_1', 'v6_2', 'v6_3', 'v6_4', 'v6_5'], f'Version {parser.version} is not currently implemented'
+    assert parser.version in ['v5', 'v6', 'v6_1', 'v6_2', 'v6_3', 'v6_4', 'v6_5', 'v6_6'], f'Version {parser.version} is not currently implemented'
     assert parser.device in ['gpu', 'cpu'], "Device can only be set to gpu (cuda:0) or cpu"
     assert parser.name, "Name cannot be empty"
     assert parser.batch_size > 0, "Batch size cannot be negative"
@@ -365,6 +365,8 @@ def run(parser):
         import model_v6_4.modules as modules
     elif parser.version == "v6_5":
         import model_v6_5.modules as modules
+    elif parser.version == "v6_6":
+        import model_v6_6.modules as modules
 
     # check if dataset exists
     if not os.path.exists(parser.data):

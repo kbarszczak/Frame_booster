@@ -4,6 +4,17 @@ import torchvision
 import torch
 
 
+"""
+This module contains fbnet v5 (implementation similiar to model FILM) with the following features:
+- Overall U-Net with double feature warping
+- Warp both images
+- Feedforward CNN flow prediciton architecture
+- Flow addition not concatenation
+- Encoder with passing level information 2 layers below (see FILM implementation)
+- Decoder features addition
+"""
+
+
 class FlowEstimation(nn.Module):
     def __init__(self, flow_input_chanels,
                 flow_info = {

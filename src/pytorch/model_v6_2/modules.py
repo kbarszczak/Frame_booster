@@ -3,6 +3,20 @@ import torch.nn as nn
 import torch
 
 
+"""
+This module contains fbnet v6_2 with the following features:
+- Overall Attention U-Net with single feature warping
+- Warp only one image
+- Dense CNN flow prediciton architecture
+- Flow concatenation not addition
+- Attention gate usage
+- Encoder with filters outputs on each level (without feature stacking)
+- Decoder features concatenation
+- Use of conv2d transpose to change size
+- Use of the proper coef to the flow upscaling
+"""
+
+
 class TReLU(nn.Module):
     def __init__(self, lower=0.0, upper=1.0, **kwargs):
         super(TReLU, self).__init__(**kwargs)
