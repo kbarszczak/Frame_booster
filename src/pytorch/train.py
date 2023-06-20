@@ -29,9 +29,89 @@ def get_parser():
     return parser.parse_args()
 
 
-def train():
-    # TODO: write train function 
-    pass
+def train(train_dataloader, valid_dataloader, test_dataloader, vis_batches, batch_size, epochs, modules, model_name, model_version, data_path, target_path, height, width, save_freq, log_freq):
+    # print the size of training and validating dataset
+    print(f"Training {model_name}_{model_version}")
+    print(f'Loaded the dataset from: "{data_path}"')
+    print(f'Data will be saved to: "{target_path}"')
+    print(f'Training batches: {len(train_dataloader)}')
+    print(f'Validating batches: {len(valid_dataloader)}')
+    print(f'Batch size: {batch_size}')
+    print(f'Epochs: {epochs}')
+    print(f"Device: {device}")
+
+    # create the model
+    model = modules.FBNet(input_shape=(batch_size, 3, height, width), device=device).to(device)
+    optimizer = optim.NAdam(model.parameters(), lr=1e-4)
+    loss = utils.FBNetLoss(device=device)
+
+    # train the model
+    history = utils.fit(
+        model = model, 
+        train = train_dataloader,
+        valid = valid_dataloader,
+        vis_batches = vis_batches,
+        optimizer = optimizer, 
+        loss = loss, 
+        metrics = [loss.psnr, loss.mse, loss.mae],
+        epochs = epochs,
+        target_path = target_path, 
+        name = model_name,
+        device = device,
+        save_freq = save_freq,
+        log_freq = 1,
+        log_perf_freq = log_freq,
+        mode = "best"
+    )
+
+    # evaluate the training
+    score = utils.evaluate(
+        model=model,
+        test=test_dataloader,
+        loss=loss,
+        metrics=[loss.psnr, loss.mse, loss.mae],
+        device=device
+    )
+
+    # save the model, the history, and the testing score
+    history_path = os.path.join(target_path, f'{model_name}_history.pickle')
+    model_path = os.path.join(target_path, f'{model_name}.pt')
+    test_path = os.path.join(target_path, f'{model_name}_score.txt')
+    torch.save(model.state_dict(), model_path)
+    with open(history_path, 'wb') as handle:
+        pickle.dump(history, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(test_path, 'w') as f:
+        print(score, file=f)
+
+    # save the plots of history
+    plot_5_path = os.path.join(target_path, f'plot_5.png')
+    plot_5_loss_path = os.path.join(target_path, f'plot_5_loss.png')
+    plot_5_raw_loss_path = os.path.join(target_path, f'plot_5_raw_loss.png')
+    plot_50_path = os.path.join(target_path, f'plot_50.png')
+    plot_50_loss_path = os.path.join(target_path, f'plot_50_loss.png')
+    plot_50_raw_loss_path = os.path.join(target_path, f'plot_50_raw_loss.png')
+    utils.save_history_plot(plot_5_path, history, exclude=None, use_norm=True, steps=5)
+    utils.save_history_plot(plot_5_loss_path, history, exclude=['psnr', 'mse', 'mae', 'ssim'], use_norm=True, steps=5)
+    utils.save_history_plot(plot_5_raw_loss_path, history, exclude=['psnr', 'mse', 'mae', 'ssim'], use_norm=False, steps=5)
+    utils.save_history_plot(plot_50_path, history, exclude=None, use_norm=True, steps=50)
+    utils.save_history_plot(plot_50_loss_path, history, exclude=['psnr', 'mse', 'mae', 'ssim'], use_norm=True, steps=50)
+    utils.save_history_plot(plot_50_raw_loss_path, history, exclude=['psnr', 'mse', 'mae', 'ssim'], use_norm=False, steps=50)
+
+    # Log training results
+    print(f"Training of {model_name}_{model_version} finished")
+    print(f"Testing score:")
+    for m, v in score.items():
+        print(f'{m}: {v}')
+    print(f"Trained model saved to {model_path}")
+    print(f"Training history saved to {history_path}")
+    print(f"Testing score saved to {test_path}")
+    print('Plots saved to the following files:')
+    print(plot_5_path)
+    print(plot_5_loss_path)
+    print(plot_5_raw_loss_path)
+    print(plot_50_path)
+    print(plot_50_loss_path)
+    print(plot_50_raw_loss_path)
 
 
 def run(parser):
@@ -142,82 +222,24 @@ def run(parser):
     vis_iterator = iter(vis_dataloader)
     vis_batches = [next(vis_iterator) for bi in range(len(vis_dataloader)) if bi in [0, 1, 2]]
 
-    # print the size of training and validating dataset
-    print(f"Training {parser.name}_{parser.version}")
-    print(f'Loaded the dataset from: "{parser.data}"')
-    print(f'Data will be saved to: "{target_path}"')
-    print(f'Training batches: {len(train_dataloader)}')
-    print(f'Validating batches: {len(valid_dataloader)}')
-    print(f'Batch size: {parser.batch_size}')
-    print(f'Epochs: {parser.epochs}')
-    print(f"Device: {device}")
-
-    # create the model
-    model = modules.FBNet(input_shape=(parser.batch_size, 3, parser.height, parser.width), device=device).to(device)
-    optimizer = optim.NAdam(model.parameters(), lr=1e-4)
-    loss = utils.FBNetLoss(device=device)
-
-    # train the model
-    history = utils.fit(
-        model = model, 
-        train = train_dataloader,
-        valid = valid_dataloader,
-        vis_batches = vis_batches,
-        optimizer = optimizer, 
-        loss = loss, 
-        metrics = [loss.psnr, loss.mse, loss.mae],
-        epochs = parser.epochs,
-        target_path = target_path, 
-        name = parser.name,
-        device=device,
-        save_freq = parser.save_freq,
-        log_freq = 1,
-        log_perf_freq = parser.log_freq,
-        mode = "best"
+    # launch training function
+    train(
+        train_dataloader=train_dataloader,
+        valid_dataloader=valid_dataloader,
+        test_dataloader=test_dataloader,
+        vis_batches=vis_batches,
+        batch_size=parser.batch_size,
+        epochs=parser.epochs,
+        modules=modules,
+        model_name=parser.name,
+        model_version=parser.version,
+        data_path=parser.data,
+        target_path=target_path,
+        height=parser.height,
+        width=parser.width,
+        save_freq=parser.save_freq,
+        log_freq=parser.log_freq
     )
-
-    # evaluate the training
-    score = utils.evaluate(
-        model=model,
-        test=test_dataloader,
-        loss=loss,
-        metrics=[loss.psnr, loss.mse, loss.mae],
-        device=device
-    )
-
-    # save the model, the history, and the testing score
-    history_path = os.path.join(target_path, f'{parser.name}_history.pickle')
-    model_path = os.path.join(target_path, f'{parser.name}.pt')
-    test_path = os.path.join(target_path, f'{parser.name}_score.txt')
-    torch.save(model.state_dict(), model_path)
-    with open(history_path, 'wb') as handle:
-        pickle.dump(history, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(test_path, 'w') as f:
-        print(score, file=f)
-
-    # save the plots of history
-    plot_5_path = os.path.join(target_path, f'plot_5.png')
-    plot_5_loss_path = os.path.join(target_path, f'plot_5_loss.png')
-    plot_50_path = os.path.join(target_path, f'plot_50.png')
-    plot_50_loss_path = os.path.join(target_path, f'plot_50_loss.png')
-    utils.save_history_plot(plot_5_path, history, exclude=None, use_norm=True, steps=5)
-    utils.save_history_plot(plot_5_loss_path, history, exclude=['psnr', 'mse', 'mae', 'ssim'], use_norm=True, steps=5)
-    utils.save_history_plot(plot_50_path, history, exclude=None, use_norm=True, steps=50)
-    utils.save_history_plot(plot_50_loss_path, history, exclude=['psnr', 'mse', 'mae', 'ssim'], use_norm=True, steps=50)
-
-    # Log training results
-    print(f"Training of {parser.name}_{parser.version} finished")
-    print(f"Testing score:")
-    for m, v in score.items():
-        print(f'{m}: {v}')
-    print(f"Trained model was saved to {model_path}")
-    print(f"Training history was saved to {history_path}")
-    print(f"Testing score was saved to {test_path}")
-    print('Plots save to the following files:')
-    print(plot_5_path)
-    print(plot_5_loss_path)
-    print(plot_50_path)
-    print(plot_50_loss_path)
 
 
 if __name__ == "__main__":
