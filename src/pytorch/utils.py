@@ -129,7 +129,10 @@ def create_flow_view(model, batches, path, device):
     # hook registration function
     def get_activation(name):
         def hook(model, input, output):
-            flows[name] = output[-1].detach()
+            if torch.is_tensor(output):
+                flows[name] = output.detach()
+            else:
+                flows[name] = output[-1].detach()
         return hook
 
     # register hooks
@@ -179,7 +182,10 @@ def create_attention_view(model, batches, path, device):
     # hook registration function
     def get_activation(name, act, upsample):
         def hook(model, input, output):
-            attentions[name] = upsample(act(output.detach()))
+            mask = act(output.detach())
+            if upsample is not None:
+                mask = upsample(mask)
+            attentions[name] = mask
         return hook
 
     # register hooks

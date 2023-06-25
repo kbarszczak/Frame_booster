@@ -118,7 +118,7 @@ def train(train_dataloader, valid_dataloader, test_dataloader, vis_batches, batc
 
 def run(parser):
     # verify arguments
-    assert parser.version in ['v5', 'v6', 'v6_1', 'v6_2', 'v6_3', 'v6_4', 'v6_5', 'v6_6t', 'v6_6s'], f'Version {parser.version} is not currently implemented'
+    assert parser.version in ['v5', 'v6', 'v6_1', 'v6_2', 'v6_3', 'v6_4', 'v6_5', 'v6_6t', 'v6_6s', 'v6_7', 'v7'], f'Version {parser.version} is not currently implemented'
     assert parser.device in ['gpu', 'cpu'], "Device can only be set to gpu (cuda:0) or cpu"
     assert parser.name, "Name cannot be empty"
     assert parser.batch_size > 0, "Batch size cannot be negative"
@@ -145,6 +145,10 @@ def run(parser):
         import model_v6_6t.modules as modules
     elif parser.version == "v6_6s":
         import model_v6_6s.modules as modules
+    elif parser.version == "v6_7":
+        import model_v6_7.modules as modules
+    elif parser.version == "v7":
+        import model_v7.modules as modules
 
     # check if dataset exists
     if not os.path.exists(parser.data):
