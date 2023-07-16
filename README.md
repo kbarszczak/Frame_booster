@@ -8,15 +8,25 @@ The key motivation is to build a system that generates new frames more accuratel
 
 ## Build Status
 
-The FBNet model version v1 is already built and trained using Vimeo90K triplet dataset. There are written scripts that can be used either to train your own version of the net or test already existing one. The pretrained model can be found here: models/model_v1/FBNet.h5
+The FBNet models v1, v2, v3, and v4 are written in TensorFlow and Keras, and other models such as v5, v6, and v7 are written in PyTorch. Each model is pre-trained and ready to use. Proper model files can be found in a 'models' directory. Each model has been trained on the Vimeo90K triplet dataset. The below graph shows the comparison of models v5-v7 with different modifications applied.
+
+![models](https://github.com/kbarszczak/Frame_booster/assets/72699445/338e3f04-6f13-4db8-a062-7ec37167d6df)
+
+Currently, the best model is the one in version 5. Its PSNR metric on the Vimeo90K test dataset is around 32.33 points. The comparison to other SOTA models is shown below (The mix column is simply a linear combination of 2 images from the sequence).
+
+![sota_comp](https://github.com/kbarszczak/Frame_booster/assets/72699445/f6bcfe9b-d145-4406-b5d8-807a987999b9)
 
 ## Screenshots
 
-Some results of the model in version 1.0
+The learning progress of model v5.
 
-![best_6](https://user-images.githubusercontent.com/72699445/235080906-dc429c74-6286-4280-a42c-e79a961aa8fd.png)
+![model_v5_progress](https://github.com/kbarszczak/Frame_booster/assets/72699445/e4dd9ed9-13c3-4ce5-ba85-d232d7f227cc)
 
-And the video shows the original video on the left and the result of boosting the frame rate 4x on the right.
+The comparison of results produced by model v5 (right upper corner), model v6_7 (left lower corner), model v7_1 (right lower corner), and the ground truth image (left upper corner).
+
+![comp](https://github.com/kbarszczak/Frame_booster/assets/72699445/e2ce8920-28bb-4e17-952f-06db663ee6d0)
+
+And the video shows the original video on the left and the result of boosting the frame rate 4x on the right (boosting by model v1).
 
 [![result_video_alt](https://user-images.githubusercontent.com/72699445/235115677-d86d572d-7b4d-49b3-942e-2f1b7d49827a.png)](https://www.youtube.com/watch?v=844G_KYDchw)
 
@@ -24,7 +34,8 @@ And the video shows the original video on the left and the result of boosting th
 
 The project uses the following tech/frameworks:
 - python 3.10
-- keras/tensorflow
+- keras/tensorflow (models v1-v4)
+- pytorch (models v5-v7)
 - opencv
 - numpy
 
@@ -58,7 +69,7 @@ After these steps, everything is set up and ready to use.
 
 ## How to use?
 
-1. **Frame boosting** may be performed by launching the 'src/frame_generator.py' script with the following switches:
+1. **Frame boosting** may be performed by launching the 'src/frame_generator.py' script with the following switches (supports models in version 1-3):
 - -s the filename of the source video (absolute or relative)
 - -m the path to the trained model saved in a .h5 format
 - -t the path to a dictionary where the results files will be created
@@ -73,7 +84,7 @@ Example:
 python src/frame_generator.py -s 'test.mp4' -m 'FBNet.h5' -t 'C:/Users/kamil/test' -c 2 -vn 'test_result_2x' -md fast -e avi
 ```
 
-2. **To train** your own net one may use the 'src/model_v1/model.py' with the switches:
+2. **To train** your own net one may use the 'train.py' script either from src/tensorflow or src/pytorch directory with the switches:
 - -tr the path to the training .tfrecords file
 - -trc the amount of training data
 - -ts the path to the testing .tfrecords file
@@ -88,10 +99,10 @@ python src/frame_generator.py -s 'test.mp4' -m 'FBNet.h5' -t 'C:/Users/kamil/tes
 - -ih the input images height
 Example:
 ```
-python src/model_v1/model.py -tr train_144x256_19000.tfrecords -trc 19000 -ts test_144x256_1000.tfrecords -tsc 1000 -v valid_144x256_500.tfrecords -vc 500 -t C:/Users/kamil/test -n model -b 5 -e 10
+python src/tensorflow/train.py -tr train_144x256_19000.tfrecords -trc 19000 -ts test_144x256_1000.tfrecords -tsc 1000 -v valid_144x256_500.tfrecords -vc 500 -t C:/Users/kamil/test -n model -b 5 -e 10
 ```
 
-3. **Create your datasets** by running 'src/create_data.py' with the following switches:
+3. **Create your dataset for TensorFlow** by running 'src/tensorflow/data_generator.py' with the following switches:
 - -s the source path of the raw dataset to process
 - -t the target path where the result files will be created
 - -l the loaded script (vimeo90k, custom). In the case of vimeo90k, the -d parameter is ignored and the source path has to point to the vimeo90k triplet dataset where the following files/dirs are: sequences, tri_trainlist.txt, tri_testlist.txt. In custom, the path has to point to a directory containing only the video files. Each file will be loaded and processed
@@ -104,7 +115,7 @@ python src/model_v1/model.py -tr train_144x256_19000.tfrecords -trc 19000 -ts te
 - -d the delay parameres means that d - 1 frames will be skipped between generated data (applies only to -l set to custom)
 Example:
 ```
-python src/create_data.py -s C:/Users/kamil/raw/240fps_horizontal -t data -l custom -tr 1000 -ts 500 -tv 0.9 -i bicubic -iw 256 -ih 144 -d 5
+python src/tensorflow/data_generator.py -s C:/Users/kamil/raw/240fps_horizontal -t data -l custom -tr 1000 -ts 500 -tv 0.9 -i bicubic -iw 256 -ih 144 -d 5
 ```
 
 ## Contribute
