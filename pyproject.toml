@@ -11,9 +11,9 @@ dependencies = [
     "pandas==1.5.2",
     "tensorflow==2.13",
     "tensorflow-addons==0.21.0",
-    "torch==2.0.1",
-    "torchvision==0.15.2",
-    "tqdm>=4.67.3",
+    "torch==2.1.2",
+    "torchvision==0.16.2",
+    "tqdm==4.67.3",
 ]
 
 [dependency-groups]
