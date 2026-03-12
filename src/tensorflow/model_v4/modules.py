@@ -1,9 +1,9 @@
 import keras
 import tensorflow_addons.image as tfa_image
+from keras import backend as K
 from keras import layers
 
 import tensorflow as tf
-from tensorflow.keras import backend as K
 
 """
 The output activation returns linear values cropped to range from 0 to 1

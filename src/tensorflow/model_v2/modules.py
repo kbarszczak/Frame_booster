@@ -1,10 +1,10 @@
 import keras
 import tensorflow_addons as tfa
+from keras import backend as K
 from keras import layers, models
+from keras.applications.vgg16 import VGG16
 
 import tensorflow as tf
-from tensorflow.keras import backend as K
-from tensorflow.keras.applications.vgg16 import VGG16
 
 VGG_model = VGG16(include_top=False)
 VGG_model_1 = models.Model(inputs=VGG_model.inputs, outputs=VGG_model.layers[2].output)
@@ -382,15 +382,6 @@ class BidirectionalFlowEstimation(layers.Layer):
             flow_1_2_changed_upsampled,
             flow_2_1_changed_upsampled,
         )
-
-
-"""
-This output functions cuts the linear function to the range from 0 to 1
-"""
-
-
-def output_activation(x):
-    return tf.math.minimum(tf.math.maximum(x, 0), 1)
 
 
 """
