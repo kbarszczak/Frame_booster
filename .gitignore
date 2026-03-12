@@ -2,3 +2,4 @@ __pycache__/
 benchmark/*
 .ipynb_checkpoints
 .idea/
+data/
