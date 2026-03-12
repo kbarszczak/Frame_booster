@@ -141,8 +141,7 @@ class FlowFeatureWarp(nn.Module):
         yy = yy.view(1, 1, H, W).repeat(B, 1, 1, 1)
 
         grid = torch.cat((xx, yy), 1).float()
-        if image.is_cuda:
-            grid = grid.cuda()
+        grid = grid.to(image.device)
 
         vgrid = grid + flow
         vgrid[:, 0, :, :] = 2.0 * vgrid[:, 0, :, :].clone() / max(W - 1, 1) - 1.0

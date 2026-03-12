@@ -8,7 +8,7 @@ code-clean:
 	uv run ruff format src/
 
 train:
-	uv run python src/pytorch/train.py \
+	PYTORCH_ENABLE_MPS_FALLBACK=1 uv run python src/pytorch/train.py \
 		--version $(word 2,$(MAKECMDGOALS)) \
 		--name fbnet_macos \
 		--target data/tmp \
