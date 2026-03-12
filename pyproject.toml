@@ -13,6 +13,7 @@ dependencies = [
     "tensorflow-addons==0.21.0",
     "torch==2.0.1",
     "torchvision==0.15.2",
+    "tqdm>=4.67.3",
 ]
 
 [dependency-groups]
