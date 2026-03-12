@@ -19,3 +19,27 @@ dependencies = [
 dev = [
     "pyright>=1.1.408",
 ]
+
+[tool.pyright]
+include = ["src"]
+exclude = ["**/__pycache__", "**/grpc_gen/**"]
+typeCheckingMode = "basic"
+reportPrivateUsage = "error"
+reportPrivateImportUsage = "error"
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportGeneralTypeIssues = true
+reportOptionalMemberAccess = true
+reportUntypedFunctionDecorator = false
+reportUnknownMemberType = false
+reportIncompatibleMethodOverride = "error"
+reportIncompatibleVariableOverride = "error"
+strictListInference = true
+strictDictionaryInference = true
+strictParameterNoneValue = true
+reportAttributeAccessIssue = "none"
+reportArgumentType = "none"
+reportIndexIssue = "none"
+reportCallIssue = "none"
+venvPath = "."
+venv = ".venv"

@@ -301,6 +301,8 @@ def run(parser):
         import model_v7.modules as modules
     elif parser.version == "v7_1":
         import model_v7_1.modules as modules
+    else:
+        raise ValueError(f"Unsupported version: '{parser.version}'")
 
     # check if dataset exists
     if not os.path.exists(parser.data):

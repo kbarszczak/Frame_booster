@@ -200,6 +200,7 @@ def low_mem_boosting(
 
     has_frames = True
     last_frame = None
+    last_original_frame = None
     index = 0
     while has_frames:
         frames = []
@@ -283,6 +284,8 @@ if __name__ == "__main__":
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     elif extension == "avi":
         fourcc = cv2.VideoWriter_fourcc("I", "4", "2", "0")
+    else:
+        raise ValueError(f"Unsupported extension: '{extension}'")
 
     if model_version in ["v1", "v2", "v3"]:
         from tensorflow.data_generator import preprocess
@@ -293,6 +296,8 @@ if __name__ == "__main__":
         import tensorflow.model_v2.modules as modules
     elif model_version == "v3":
         import tensorflow.model_v3.modules as modules
+    else:
+        raise ValueError(f"Unsupported model version: '{model_version}'")
 
     model = modules.load_model(model_path)
     if mode == "fast":

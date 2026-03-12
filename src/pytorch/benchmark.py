@@ -259,6 +259,8 @@ def run(parser):
             import model_v7.modules as modules
         elif version == "v7_1":
             import model_v7_1.modules as modules
+        else:
+            raise ValueError(f"Unsupported version: '{version}'")
 
         # create dir for the files
         target_path = os.path.join(parser.target, f"model_{version}")
