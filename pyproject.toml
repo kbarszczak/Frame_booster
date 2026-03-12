@@ -1,0 +1,16 @@
+[project]
+name = "frame-booster"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "matplotlib==3.7",
+    "numpy==1.23.2",
+    "opencv-python==4.6.0.66",
+    "pandas==1.5.2",
+    "tensorflow==2.13",
+    "tensorflow-addons==0.21.0",
+    "torch==2.0.1",
+    "torchvision==0.15.2",
+]

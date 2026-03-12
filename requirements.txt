@@ -1,9 +1,0 @@
-keras==2.8.0
-matplotlib==3.5.1
-numpy==1.21.2
-opencv_python==4.6.0.66
-pandas==1.5.2
-tensorflow==2.8.1
-tensorflow_addons==0.21.0
-torch==2.0.1
-torchvision==0.15.2
