@@ -12,7 +12,11 @@ import utils
 def get_parser():
     parser = argparse.ArgumentParser(description="Training FBNet model")
     parser.add_argument(
-        "-ver", "--version", required=True, type=str, help="The version of the model"
+        "-ver",
+        "--version",
+        required=True,
+        type=str,
+        help="The version of the model",
     )
     parser.add_argument(
         "-n",
@@ -27,7 +31,7 @@ def get_parser():
         "--target",
         required=False,
         type=str,
-        default="..\\..\\tmp",
+        default="../../data/tmp",
         help="The path where data is stored during the straining (such as history etc.)",
     )
     parser.add_argument(
@@ -35,7 +39,7 @@ def get_parser():
         "--data",
         required=False,
         type=str,
-        default="D:\\Data\\Video_Frame_Interpolation\\vimeo90k_pytorch",
+        default="../../data/vimeo90k_pytorch",
         help="The source path of the dataset",
     )
     parser.add_argument(
@@ -68,21 +72,31 @@ def get_parser():
         required=False,
         type=str,
         default="vis.txt",
-        help="The name of file that contains vaisualizing samples split",
+        help="The name of file that contains visualizing samples split",
     )
     parser.add_argument(
         "-dev",
         "--device",
         required=False,
         type=str,
-        default="gpu",
-        help="The device used during the training (cpu or gpu)",
+        default="mps",
+        help="The device used during the training (cpu, gpu or mps)",
     )
     parser.add_argument(
-        "-b", "--batch_size", required=False, type=int, default=2, help="The batch size"
+        "-b",
+        "--batch_size",
+        required=False,
+        type=int,
+        default=2,
+        help="The batch size",
     )
     parser.add_argument(
-        "-e", "--epochs", required=False, type=int, default=10, help="The epochs count"
+        "-e",
+        "--epochs",
+        required=False,
+        type=int,
+        default=10,
+        help="The epochs count",
     )
     parser.add_argument(
         "-iw",
@@ -267,8 +281,8 @@ def run(parser):
         "v7",
         "v7_1",
     ], f"Version {parser.version} is not currently implemented"
-    assert parser.device in ["gpu", "cpu"], (
-        "Device can only be set to gpu (cuda:0) or cpu"
+    assert parser.device in ["gpu", "cpu", "mps"], (
+        "Device can only be set to gpu (cuda:0), mps or cpu"
     )
     assert parser.name, "Name cannot be empty"
     assert parser.batch_size > 0, "Batch size cannot be negative"
@@ -425,6 +439,10 @@ if __name__ == "__main__":
         if not torch.cuda.is_available():
             raise Exception("Cuda is not available")
         device = torch.device("cuda:0")
+    elif parser.device == "mps":
+        if not torch.backends.mps.is_available():
+            raise Exception("MPS is not available")
+        device = torch.device("mps")
     else:
         device = torch.device("cpu")
 

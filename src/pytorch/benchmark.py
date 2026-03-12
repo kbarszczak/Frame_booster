@@ -31,15 +31,15 @@ def get_parser():
         "--target",
         required=False,
         type=str,
-        default="..\\..\\tmp",
-        help="The path where data is stored during the straining (such as history etc.)",
+        default="../../data/tmp",
+        help="The path where data is stored during the training (such as history etc.)",
     )
     parser.add_argument(
         "-d",
         "--data",
         required=False,
         type=str,
-        default="D:\\Data\\Video_Frame_Interpolation\\vimeo90k_pytorch",
+        default="../../data/vimeo90k_pytorch",
         help="The source path of the dataset",
     )
     parser.add_argument(
@@ -79,8 +79,8 @@ def get_parser():
         "--device",
         required=False,
         type=str,
-        default="gpu",
-        help="The device used during the training (cpu or gpu)",
+        default="mps",
+        help="The device used during the training (cpu, gpu or mps)",
     )
     parser.add_argument(
         "-b", "--batch_size", required=False, type=int, default=2, help="The batch size"
@@ -140,8 +140,8 @@ def run(parser):
             "v7",
             "v7_1",
         ], f"Version {version} is not currently implemented"
-    assert parser.device in ["gpu", "cpu"], (
-        "Device can only be set to gpu (cuda:0) or cpu"
+    assert parser.device in ["gpu", "cpu", "mps"], (
+        "Device can only be set to gpu (cuda:0), mps or cpu"
     )
     assert parser.name, "Name cannot be empty"
     assert parser.batch_size > 0, "Batch size cannot be negative"
@@ -315,6 +315,10 @@ if __name__ == "__main__":
         if not torch.cuda.is_available():
             raise Exception("Cuda is not available")
         device = torch.device("cuda:0")
+    elif parser.device == "mps":
+        if not torch.backends.mps.is_available():
+            raise Exception("MPS is not available")
+        device = torch.device("mps")
     else:
         device = torch.device("cpu")
 
