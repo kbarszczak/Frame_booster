@@ -1,12 +1,13 @@
 import cv2
 
+
 def process(source, target):
-    fourcc = cv2.VideoWriter_fourcc('I','4','2','0')
+    fourcc = cv2.VideoWriter_fourcc("I", "4", "2", "0")
 
     vidcap = cv2.VideoCapture(source)
     success, frame = vidcap.read()
     fps = vidcap.get(cv2.CAP_PROP_FPS)
-    out = cv2.VideoWriter(target, fourcc, fps/4.0, (frame.shape[1], frame.shape[0]))
+    out = cv2.VideoWriter(target, fourcc, fps / 4.0, (frame.shape[1], frame.shape[0]))
 
     index = 0
     while success:
@@ -19,4 +20,7 @@ def process(source, target):
 
 
 if __name__ == "__main__":
-    process('/Users/kamil/Desktop/frame_booster_results/home/home.mov', '/Users/kamil/Desktop/frame_booster_results/home/home_slow.avi')
+    process(
+        "/Users/kamil/Desktop/frame_booster_results/home/home.mov",
+        "/Users/kamil/Desktop/frame_booster_results/home/home_slow.avi",
+    )
