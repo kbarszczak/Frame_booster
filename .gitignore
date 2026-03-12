@@ -3,3 +3,4 @@ benchmark/*
 .ipynb_checkpoints
 .idea/
 data/
+.DS_Store
